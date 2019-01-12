@@ -21,5 +21,9 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/start-electron.js",
+    "src/start-react.js",
   ]
 }
