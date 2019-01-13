@@ -27,5 +27,6 @@
   "exclude": [
     "public/electron.js",
     "src/start-react.js",
+    "src/utils/electronFs.js"
   ]
 }
