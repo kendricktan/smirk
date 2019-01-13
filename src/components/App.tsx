@@ -1,8 +1,13 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
 
-class App extends Component {
+import React, { Component } from 'react';
+import logo from '../logo.svg';
+import '../style/App.css';
+import {observer} from 'mobx-react';
+
+import { AppSettings } from '../models/AppSettings'
+
+@observer
+class App extends Component<{appSettings: AppSettings}, {}> {
   render() {
     return (
       <div className="App">
@@ -17,7 +22,7 @@ class App extends Component {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Learn React
+            Learn React Right Now in {this.props.appSettings.language}
           </a>
         </header>
       </div>
