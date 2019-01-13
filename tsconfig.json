@@ -20,10 +20,10 @@
     "jsx": "preserve"
   },
   "include": [
-    "src"
+    "src", "public/stat-electron.js"
   ],
   "exclude": [
-    "src/start-electron.js",
+    "public/electron.js",
     "src/start-react.js",
   ]
 }

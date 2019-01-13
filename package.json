@@ -7,6 +7,7 @@
     "@types/node": "10.12.18",
     "@types/react": "16.7.18",
     "@types/react-dom": "16.0.11",
+    "electron-is-dev": "^1.0.1",
     "react": "^16.7.0",
     "react-dom": "^16.7.0",
     "react-scripts": "2.1.3",
@@ -20,19 +21,32 @@
     "electron": "electron .",
     "electron-start": "node src/start-react",
     "react-start": "BROWSER=none react-scripts start",
-    "pack": "build --dir",
-    "dist": "npm run build && build",
+    "pack": "build -c.extraMetadata.main=build/electron.js",
+    "dist": "npm run build && npm run pack",
     "postinstall": "install-app-deps"
   },
   "homepage": "./",
-  "main": "src/start-electron.js",
+  "author": {
+    "name": "Kendrick Tan",
+    "email": "me@kndrck.co",
+    "url": "https://kndrck.co"
+  },
+  "main": "public/electron.js",
   "build": {
-    "appId": "com.electron.electron-with-create-react-app",
-    "win": {
-      "iconUrl": "https://cdn2.iconfinder.com/data/icons/designer-skills/128/react-256.png"
-    },
+    "productName": "smirk",
+    "appId": "co.kndrck.smirk",
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
     "directories": {
-      "buildResources": "public"
+      "buildResources": "assets"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
     }
   },
   "eslintConfig": {
