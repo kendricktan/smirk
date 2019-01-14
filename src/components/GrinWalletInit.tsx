@@ -66,12 +66,12 @@ class GrinInitializer extends Component<
       grin.spawnWalletOwnerProcess();
     }
 
-    // Check to unlocked
-    appState.setGrinWalletState(GrinWalletState.Unlocked);
-
     // Get API Secrets
-    const newGrin = grin.getApiSecrets()
+    const newGrin = grin.readApiSecrets()
     appState.setGrin(newGrin)
+
+    // Change to unlocked
+    appState.setGrinWalletState(GrinWalletState.Unlocked);
   }
 
   unlockWallet() {

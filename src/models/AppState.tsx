@@ -1,6 +1,6 @@
 import { observable } from "mobx";
 import { hasGrinInPath } from "../utils/GrinSetup";
-import { Grin, grin } from "../utils/Grin";
+import { Grin, grin, GrinWalletRetrieveTx, GrinWalletSummaryInfo } from "../utils/Grin";
 
 export enum GrinBinaryState {
   NotFound,
@@ -35,6 +35,17 @@ export class AppState {
   @observable grinBinaryState: GrinBinaryState = hasGrinInPath()
     ? GrinBinaryState.Found
     : GrinBinaryState.NotFound;
+
+  @observable grinWalletSummaryInfo: GrinWalletSummaryInfo = {} as GrinWalletSummaryInfo;
+  @observable grinWalletRetrievedTxs: Array<GrinWalletRetrieveTx> = [{} as GrinWalletRetrieveTx]
+
+  async updateGrinWalletSummaryInfo() {
+    this.grinWalletSummaryInfo = await this.grin.getGrinWalletSummaryInfo()
+  }
+
+  async updateGrinWalletRetrievedTxs() {
+    this.grinWalletRetrievedTxs = await this.grin.getGrinWalletRetrieveTxs()
+  }
 
   setGrin(g: Grin): void {
     this.grin = g;

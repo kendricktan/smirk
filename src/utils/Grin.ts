@@ -7,6 +7,31 @@ import { ChildProcess } from "child_process";
 
 const { execSync, spawn } = electronChildProcess;
 
+export interface GrinWalletSummaryInfo {
+  last_confirmed_height: number,
+  minimum_confirmations: number,
+  total: number,
+  amount_awaiting_confirmation: number,
+  amount_immature: number,
+  amount_currently_spendable: number,
+  amount_locked: number
+}
+
+export interface GrinWalletRetrieveTx {
+  id: number,
+  tx_slate_id: string,
+  tx_type: string,
+  creation_ts: string,
+  confirmation_ts: string,
+  confirmed: boolean,
+  num_inputs: number,
+  num_outputs: number,
+  amount_credited: number,
+  amount_debited: number,
+  fee: number,
+  tx_hex: string
+}
+
 export class Grin {
   // Basic Configuration
   _network: GrinNetwork;
@@ -18,7 +43,6 @@ export class Grin {
 
   // Keep track of Grin Wallet Foreign API process
   // And Grin Wallet Owner API process
-  _nodeProcess: ChildProcess;
   _walletForeignProcess: ChildProcess;
   _walletOwnerProcess: ChildProcess;
 
@@ -30,7 +54,6 @@ export class Grin {
     this._walletConfigDirectory = "";
     this._serverConfigDirectory = grinDirectory;
 
-    this._nodeProcess = {} as ChildProcess;
     this._walletForeignProcess = {} as ChildProcess;
     this._walletOwnerProcess = {} as ChildProcess;
   }
@@ -70,7 +93,7 @@ export class Grin {
   }
 
   // Reads the .api_secret file
-  getApiSecrets(): Grin {
+  readApiSecrets(): Grin {
     const as: Buffer = electronFs.readFileSync(
       `${this._walletConfigDirectory}/.api_secret`
     );
@@ -106,6 +129,33 @@ export class Grin {
     return false;
   }
 
+  /***** API Calls *****/
+  getGrinWalletSummaryInfo(): Promise<GrinWalletSummaryInfo> {
+    return axios
+      .get(`http://grin:${this._apiSecret}@localhost:13420/v1/wallet/owner/retrieve_summary_info?refresh`)
+      .then(x => {
+        // x is Array[bool, object]
+        return x.data[1]
+      })
+      .catch(x => {
+        return {}
+      })
+  }
+
+  getGrinWalletRetrieveTxs(): Promise<Array<GrinWalletRetrieveTx>> {
+    return axios
+      .get(`http://grin:${this._apiSecret}@localhost:13420/v1/wallet/owner/retrieve_txs?refresh`)
+      .then(x => {
+        // x is Array[bool, [object]]
+        return x.data[1]
+      })
+      .catch(x => {
+        return {}
+      })
+  }
+
+  /***** Background Process Stuff *****/
+
   // Checks to see if server is initialized
   isServerInitialized(): boolean {
     return electronFs.existsSync(
@@ -136,13 +186,10 @@ export class Grin {
   }
 
   spawnNodeProcess(): void {
-    const p: ChildProcess = spawn(
-      `./grin`,
-      [`${this._networkParam}`, "server", "run"],
-      { cwd: grinDirectory, detached: true, stdio: "ignore" }
-    );
-
-    this._nodeProcess = p;
+    execSync(
+      `./grin ${this._networkParam} server start`,
+      { cwd: grinDirectory }
+    )
   }
 
   // Checks to see if wallet owner api is up
@@ -205,9 +252,6 @@ export class Grin {
 
   // Kills all process
   killAllProcess() {
-    try {
-      this._nodeProcess.kill();
-    } catch (e) {}
     try {
       this._walletForeignProcess.kill();
     } catch (e) {}
