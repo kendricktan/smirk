@@ -27,8 +27,8 @@ class App extends Component<
       }
       case GrinBinaryState.Found: {
         switch (appState.grinWalletState) {
+          case GrinWalletState.ShowRecoveryKey:
           case GrinWalletState.Locked:
-          case GrinWalletState.InvalidPassword:
           case GrinWalletState.Uninitialized: {
             return <GrinWalletInit {...this.props} />;
           }

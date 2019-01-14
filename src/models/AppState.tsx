@@ -15,8 +15,8 @@ export enum GrinNetwork {
 
 export enum GrinWalletState {
   Uninitialized,
+  ShowRecoveryKey,
   Locked, // has grin-wallet.toml but haven't entered password
-  InvalidPassword,
   Unlocked
 }
 

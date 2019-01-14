@@ -2,22 +2,23 @@ import { grinDirectory, grinBinPath } from "./GrinSetup";
 import { GrinNetwork } from "../models/AppState";
 
 import { electronOs, electronFs, electronChildProcess } from "./windowTools";
+import { ChildProcess } from "child_process";
 
+const { spawn } = electronChildProcess;
 const { execSync } = electronChildProcess;
 
-const cloneInstance = (instance: object) => {
-  return Object.assign(
-    Object.create(Object.getPrototypeOf(instance)),
-    instance
-  );
-};
-
 export class Grin {
+  // Basic Configuration
   _network: GrinNetwork;
   _networkParam: String;
   _password: String;
   _walletConfigDirectory: String;
   _serverConfigDirectory: String;
+
+  // Keep track of Grin Wallet Foreign API process
+  // And Grin Wallet Owner API process
+  _walletForeignProcess: ChildProcess;
+  _walletOwnerProcess: ChildProcess;
 
   constructor() {
     this._password = {} as String;
@@ -25,34 +26,35 @@ export class Grin {
     this._network = {} as GrinNetwork;
     this._walletConfigDirectory = "";
     this._serverConfigDirectory = grinDirectory;
+
+    this._walletForeignProcess = {} as ChildProcess;
+    this._walletOwnerProcess = {} as ChildProcess;
   }
 
   network(n: GrinNetwork): Grin {
-    const clone: Grin = cloneInstance(this);
-    clone._network = n;
+    this._network = n;
 
-    switch (clone._network) {
+    switch (this._network) {
       case GrinNetwork.Floonet: {
-        clone._walletConfigDirectory = `${grinDirectory}/floo`;
-        clone._networkParam = `--floonet `
+        this._walletConfigDirectory = `${grinDirectory}/floo`;
+        this._networkParam = `--floonet `;
         break;
       }
 
       default: {
-        clone._walletConfigDirectory = `${grinDirectory}`;
-        clone._networkParam = ``
+        this._walletConfigDirectory = `${grinDirectory}`;
+        this._networkParam = ``;
         break;
       }
     }
 
-    return clone;
+    return this;
   }
 
   password(p: String): Grin {
-    const clone: Grin = cloneInstance(this);
-    clone._password = p;
+    this._password = p;
 
-    return clone;
+    return this;
   }
 
   // If wallet is not initialized, we need to prompt
@@ -64,22 +66,50 @@ export class Grin {
   }
 
   // Creates grin-wallet.toml if doesn't exist
-  initializeWallet() {
-    execSync(`./grin ${this._networkParam} wallet -p ${this._password} init`, { cwd: grinDirectory })
+  initializeWallet(): String {
+    const output: Buffer = execSync(`./grin ${this._networkParam} wallet -p ${this._password} init`, {
+      cwd: grinDirectory
+    });
+
+    console.log(output.toString())
+
+    return output.toString()
   }
 
   // Unlocked wallet
   canUnlockWallet(): boolean {
     try {
-      execSync(`./grin ${this._networkParam} wallet -p ${this._password} info`, { cwd: grinDirectory })
+      execSync(
+        `./grin ${this._networkParam} wallet -p ${this._password} info`,
+        { cwd: grinDirectory }
+      );
       return true;
-    } catch(err) {}
+    } catch (err) {}
 
     return false;
   }
 
+  // Checks to see if server is initialized
+  isServerInitialized(): boolean {
+    return electronFs.existsSync(
+      `${this._serverConfigDirectory}/grin-server.toml`
+    );
+  }
+
   // Creates grin-server.toml if doesn't exist
-  initializeServer() {}
+  initializeServer() {
+    execSync(`./grin ${this._networkParam} server config`, {
+      cwd: grinDirectory
+    });
+  }
+
+  // Checks to see if wallet owner api is up
+
+
+  // Spawns wallet foreign api listener
+  spawnWalletForeignProcess() {
+
+  }
 }
 
 export const grin = new Grin();

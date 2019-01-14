@@ -16,7 +16,8 @@ class GrinInitializer extends Component<
   state = {
     password: "",
     retypePassword: "",
-    invalidPassword: false
+    invalidPassword: false,
+    walletInitStdOut: ""
   };
 
   initializeWallet() {
@@ -25,13 +26,30 @@ class GrinInitializer extends Component<
 
     // Initialize wallet
     const newGrin = grin.password(this.state.password);
-    newGrin.initializeWallet();
+    const stdout = newGrin.initializeWallet();
 
     // Update grin config
     appState.setGrin(newGrin);
 
-    // Set Wallet to unlocked
-    appState.setGrinWalletState(GrinWalletState.Unlocked);
+    // Set Wallet to show recovery key
+    appState.setGrinWalletState(GrinWalletState.ShowRecoveryKey);
+
+    // See if server is initialized,
+    // If not, initialize
+    if (!newGrin.isServerInitialized()) {
+      newGrin.initializeServer();
+    }
+
+    // SetState
+    this.setState({
+      walletInitStdOut: stdout
+    });
+  }
+
+  proceedToUnlocked() {
+    const { appState } = this.props;
+
+    appState.setGrinWalletState(GrinWalletState.Unlocked)
   }
 
   unlockWallet() {
@@ -43,6 +61,12 @@ class GrinInitializer extends Component<
     if (newGrin.canUnlockWallet()) {
       appState.setGrin(newGrin);
       appState.setGrinWalletState(GrinWalletState.Unlocked);
+
+      // See if server is initialized,
+      // If not, initialize
+      if (!newGrin.isServerInitialized()) {
+        newGrin.initializeServer();
+      }
     } else {
       this.setState({
         invalidPassword: true
@@ -63,7 +87,7 @@ class GrinInitializer extends Component<
               <strong>Wallet Config Location</strong>:{" "}
               {appState.grin._walletConfigDirectory}
             </h4>
-            <br />            
+            <br />
             <Input.Password
               placeholder="Password"
               onChange={e => this.setState({ password: e.target.value })}
@@ -83,7 +107,11 @@ class GrinInitializer extends Component<
             <br />
             <br />
             <Button
-              disabled={!passwordSame || password.length === 0 || retypePassword.length === 0}
+              disabled={
+                !passwordSame ||
+                password.length === 0 ||
+                retypePassword.length === 0
+              }
               onClick={() => this.initializeWallet()}
               block
               type="primary"
@@ -114,8 +142,38 @@ class GrinInitializer extends Component<
             <br />
             <Button
               disabled={this.state.password.length === 0}
-              onClick={() => this.unlockWallet()} block type="primary">
+              onClick={() => this.unlockWallet()}
+              block
+              type="primary"
+            >
               Unlock Wallet
+            </Button>
+          </div>
+        );
+      }
+      case GrinWalletState.ShowRecoveryKey: {
+        return (
+          <div>
+            <h1>Recovery Keys</h1>
+            <h3>
+              <strong>
+                Ensure you've copied down the recovery keys somewhere, once you
+                leave this page its gone, forever.
+              </strong>
+            </h3>
+            <br />
+            {this.state.walletInitStdOut
+              .split("\n")
+              .filter(x => x.length > 0)
+              .map(x => {
+                return <p>{x}</p>;
+              })}
+            <br />
+            <Button
+              onClick={() => this.proceedToUnlocked()}
+              block type="primary"
+            >
+              Ok, I've Copied Down My Recovery Keys
             </Button>
           </div>
         );

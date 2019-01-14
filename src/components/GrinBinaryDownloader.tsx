@@ -42,8 +42,8 @@ class GrinBinaryDownloader extends Component<
 
         return (
           <div>
-            <h1>Grin Not Found</h1>
-            <h2>Downloading Grin ${grinLatestVersion}... ({grinDownloadPerecent.toFixed(2)}%)</h2>
+            <h1>Grin Setup</h1>
+            <h2>Downloading Grin {grinLatestVersion}... ({grinDownloadPerecent.toFixed(2)}%)</h2>
           </div>
         );
       }
