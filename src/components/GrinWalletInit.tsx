@@ -34,22 +34,44 @@ class GrinInitializer extends Component<
     // Set Wallet to show recovery key
     appState.setGrinWalletState(GrinWalletState.ShowRecoveryKey);
 
-    // See if server is initialized,
-    // If not, initialize
-    if (!newGrin.isServerInitialized()) {
-      newGrin.initializeServer();
-    }
-
     // SetState
     this.setState({
       walletInitStdOut: stdout
     });
   }
 
-  proceedToUnlocked() {
+  async proceedToUnlocked() {
     const { appState } = this.props;
+    const { grin } = appState;
 
-    appState.setGrinWalletState(GrinWalletState.Unlocked)
+    // See if grin-server.toml is initialized,
+    // If not, initialize
+    if (!grin.isServerInitialized()) {
+      grin.initializeServer();
+    }
+
+    // Once grin-server.toml is initialized
+
+    // Check to see if we need to spawn the processes
+    // Or are they already spawned
+    if (!(await grin.isNodeProcessRunning())) {
+      grin.spawnNodeProcess();
+    }
+
+    if (!(await grin.isWalletForeignProcessRunning())) {
+      grin.spawnWalletForeignProcess();
+    }
+
+    if (!(await grin.isWalletOwnerProcessRunning())) {
+      grin.spawnWalletOwnerProcess();
+    }
+
+    // Check to unlocked
+    appState.setGrinWalletState(GrinWalletState.Unlocked);
+
+    // Get API Secrets
+    const newGrin = grin.getApiSecrets()
+    appState.setGrin(newGrin)
   }
 
   unlockWallet() {
@@ -60,13 +82,8 @@ class GrinInitializer extends Component<
 
     if (newGrin.canUnlockWallet()) {
       appState.setGrin(newGrin);
-      appState.setGrinWalletState(GrinWalletState.Unlocked);
 
-      // See if server is initialized,
-      // If not, initialize
-      if (!newGrin.isServerInitialized()) {
-        newGrin.initializeServer();
-      }
+      this.proceedToUnlocked();
     } else {
       this.setState({
         invalidPassword: true
@@ -171,7 +188,8 @@ class GrinInitializer extends Component<
             <br />
             <Button
               onClick={() => this.proceedToUnlocked()}
-              block type="primary"
+              block
+              type="primary"
             >
               Ok, I've Copied Down My Recovery Keys
             </Button>

@@ -17,6 +17,7 @@ class App extends Component<
   { appSettings: AppSettings; appState: AppState },
   {}
 > {
+
   render() {
     const { appState } = this.props;
 
