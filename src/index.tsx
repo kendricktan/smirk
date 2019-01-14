@@ -1,16 +1,18 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React from "react";
+import ReactDOM from "react-dom";
 
-import { appSettings } from './models/AppSettings'
+import { appSettings } from "./models/AppSettings";
+import { appState } from "./models/AppState";
 
-import App from './components/App';
-import * as serviceWorker from './serviceWorker';
+import App from "./App";
+import * as serviceWorker from "./serviceWorker";
 
-import './index.css';
+import "antd/dist/antd.css";
+import "./index.css";
 
 ReactDOM.render(
-    <App appSettings={appSettings}/>,
-    document.getElementById('root')
+  <App appSettings={appSettings} appState={appState} />,
+  document.getElementById("root")
 );
 
 // If you want your app to work offline and load faster, you can change

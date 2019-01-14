@@ -1,18 +1,15 @@
 import axios from "axios";
 
-
 import { electronOs, electronFs, electronChildProcess } from "./windowTools";
-import { fstat } from "fs";
 
-const { execSync } = electronChildProcess
+import { GrinNetwork } from '../models/AppState'
 
-const isWin: boolean = electronOs.platform().indexOf("win") > -1;
-const whereCmd = isWin ? "where" : "whereis";
-const latestVersion: string = "v0.5.2";
+const { execSync } = electronChildProcess;
 
-const grinDirectory: string = `${electronOs.homedir()}/.grin`;
-const grinBinDirectory: string = `${grinDirectory}/bin`;
-const grinBinPath: string = `${grinBinDirectory}/grin`;
+export const grinLatestVersion: string = "v0.5.2";
+export const grinDirectory: string = `${electronOs.homedir()}/.grin`;
+export const grinBinPath: string = `${grinDirectory}/grin`;
+
 const grinDownloadUrls: {
   [platform: string]: { [version: string]: { url: string; checksum: string } };
 } = {
@@ -28,63 +25,81 @@ const grinDownloadUrls: {
 export const hasGrinInPath = (): boolean => {
   setupFolderStructure();
 
-  // Checks if we've downloaded
-  // Grin previously
-  if (electronFs.existsSync(grinBinPath)) {
-    return true;
-  }
-
-  try {
-    const stdout =  execSync('command -v grin 2>/dev/null && { echo >&1 grin; exit 0; }')
-    return !!stdout;
-  } catch (err) { }
-
-  return false;
+  // Checks if we do have grin
+  return electronFs.existsSync(grinBinPath);
 };
 
 export const setupFolderStructure = () => {
   if (!electronFs.existsSync(grinDirectory)) {
     electronFs.mkdirSync(grinDirectory);
   }
-
-  if (!electronFs.existsSync(grinBinDirectory)) {
-    electronFs.mkdirSync(grinBinDirectory);
-  }
 };
+
+export const setupGrinConfig = (
+  grinNetwork: GrinNetwork = GrinNetwork.Floonet
+): void => {
+  let grinWalletConfigDirectory: string = ''
+  let grinNetworkParam: string = ''
+
+  switch(grinNetwork) {
+    case GrinNetwork.Floonet: {
+      grinNetworkParam = '--floonet'
+      grinWalletConfigDirectory = `${grinDirectory}/floo`
+      break;
+    }
+    case GrinNetwork.Mainnet: {
+      grinWalletConfigDirectory = grinDirectory
+      break;
+    }
+  }
+
+  // Setups grin-wallet.toml
+  if (!electronFs.existsSync(`${grinWalletConfigDirectory}/grin-wallet.toml`)) {
+    execSync(`./grin ${grinNetworkParam} wallet init`, { cwd: grinDirectory });
+  }
+
+  // Setups grin-server.toml
+  if (!electronFs.existsSync(`${grinDirectory}/grin-server.toml`)) {
+    execSync(`./grin ${grinNetworkParam} server config`, { cwd: grinDirectory });
+  }
+}
 
 export const setupGrin = (
   downloadProgressCb: (progressEvent: ProgressEvent) => void,
   finalCallback: () => void
 ) => {
   // Only supports linux for now
+  // Downloads latest Grin Version
   axios
-    .get(grinDownloadUrls.linux[latestVersion].url, {
+    .get(grinDownloadUrls.linux[grinLatestVersion].url, {
       headers: { Accept: "*/*" },
       responseType: "arraybuffer",
       onDownloadProgress: downloadProgressCb
     })
     .then(response => {
       try {
-        const grinTgzLocation = `${grinBinDirectory}/grin.tgz`
+        const grinTgzLocation = `${grinDirectory}/grin.tgz`;
 
         // Save as grin.tar.gz
         // Need to write as stream
         // Otherwise will only save first 20 bytes
         const wstream = electronFs.createWriteStream(grinTgzLocation);
-        wstream.write(Buffer.from(response.data))
+        wstream.write(Buffer.from(response.data));
         wstream.end();
 
-        wstream.on('close', () => {
-          // Unpack .tgz file and remove it
-          execSync(`tar -zxvf grin.tgz`, { cwd: grinBinDirectory });
-          execSync(`rm grin.tgz`, { cwd: grinBinDirectory });
+        wstream.on("close", () => {
+          // Unpack .tgz file and remove compressed file
+          execSync(`tar -zxvf grin.tgz`, { cwd: grinDirectory });
+          execSync(`rm grin.tgz`, { cwd: grinDirectory });
+          execSync(`chmod +x grin`, { cwd: grinDirectory });
+
+          // Initialize grin-
 
           // Final callback
-          finalCallback()
-        })
-
+          finalCallback();
+        });
       } catch (e) {
         alert(`Error saving grin, reason: ${e}`);
       }
-    })
+    });
 };

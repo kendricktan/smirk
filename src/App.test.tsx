@@ -1,0 +1,12 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+
+import { appSettings } from "./models/AppSettings";
+import { appState } from "./models/AppState";
+
+it('renders without crashing', () => {
+  const div = document.createElement('div');
+  ReactDOM.render(<App appSettings={appSettings} appState={appState}/>, div);
+  ReactDOM.unmountComponentAtNode(div);
+});
